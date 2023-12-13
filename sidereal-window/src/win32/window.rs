@@ -1,4 +1,4 @@
-use crate::win32::string::IntoPCWSTR;
+use crate::{win32::string::IntoPCWSTR, Window, vulkan::VulkanSupport};
 
 use windows::Win32::{
     Foundation::{HWND, WPARAM, LPARAM, LRESULT},
@@ -9,7 +9,7 @@ use windows::Win32::{
     }
 };
 
-pub struct Win32VkWindowCreateInfo {
+pub struct Win32WindowCreateInfo {
     pos_x: i32,
     pos_y: i32,
     width: i32,
@@ -17,11 +17,11 @@ pub struct Win32VkWindowCreateInfo {
     title: String,
 }
 
-pub struct Win32VkWindow {
+pub struct Win32Window {
     hwnd: HWND,
 }
 
-impl Win32VkWindow {
+impl Win32Window {
     unsafe extern "system" fn wndproc(hwnd: HWND, u_msg: u32, w_param: WPARAM, l_param: LPARAM) -> LRESULT {
         DefWindowProcW(hwnd, u_msg, w_param, l_param)
     }
@@ -56,7 +56,7 @@ impl Win32VkWindow {
         let hwnd = unsafe {
             CreateWindowExW(
                 WINDOW_EX_STYLE(0),
-                class_name, 
+                class_name,
                 title.into_pcwstr(),
                 WS_OVERLAPPEDWINDOW,
                 pos_x,
@@ -91,10 +91,10 @@ impl Win32VkWindow {
         unsafe { SetWindowLongPtrW(self.hwnd, GWLP_USERDATA, self as *mut Self as _); }
     }
 
-    pub fn new(info: Win32VkWindowCreateInfo) -> Result<Self, ()> {
+    pub fn new(info: Win32WindowCreateInfo) -> Result<Self, ()> {
         let hwnd = Self::init_window(info.pos_x, info.pos_y, info.width, info.height, info.title)?;
 
-        let mut this: Win32VkWindow = Self {
+        let mut this: Win32Window = Self {
             hwnd
         };
 
@@ -104,10 +104,47 @@ impl Win32VkWindow {
     }
 
     fn event_loop() {
-        
+
     }
 
     pub fn run() {
-        
+
+    }
+}
+
+impl Window for Win32Window {
+    fn new(
+        pos_x: i32, pos_y: i32,
+        width: i32, height: i32,
+        title: String
+    ) -> Result<Self, ()> {
+        let info =  Win32WindowCreateInfo {
+            pos_x,
+            pos_y,
+            width,
+            height,
+            title
+        };
+
+        Self::new(info)
+    }
+
+    fn create_child_window(&mut self) {
+
+    }
+
+    fn create_dialog_window(&mut self) {
+
+    }
+
+    fn create_message_dialog(&mut self, message: String, title: String) {
+
+    }
+}
+
+impl VulkanSupport for Win32Window {
+    fn get_required_extensions_list(&self) -> Vec<&'static str> {
+        // TODO: Check availability
+        vec!["VK_KHR_surface", "VK_KHR_win32_surface"]
     }
 }

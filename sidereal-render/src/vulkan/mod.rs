@@ -1,1 +1,3 @@
-pub mod surface;
+pub(crate) mod surface;
+pub mod error;
+pub mod app;

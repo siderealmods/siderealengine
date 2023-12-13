@@ -1,4 +1,6 @@
 [workspace]
 members = [
+    "sidereal-framework",
     "sidereal-window",
+    "sidereal-render",
 ]
