@@ -1,13 +1,17 @@
-use crate::{win32::string::IntoPCWSTR, Window, vulkan::VulkanSupport};
+use std::ffi::c_char;
 
-use windows::Win32::{
+use crate::{win32::string::ToUTF16String, Window};
+
+use ash::extensions::khr;
+use sidereal_render::vulkan::surface::VulkanWindow;
+use windows::{Win32::{
     Foundation::{HWND, WPARAM, LPARAM, LRESULT},
     System::LibraryLoader::GetModuleHandleW,
     UI::{
         WindowsAndMessaging::*,
         HiDpi::{SetProcessDpiAwarenessContext, DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2, GetDpiForWindow}
     }
-};
+}, core::PCWSTR};
 
 pub struct Win32WindowCreateInfo {
     pos_x: i32,
@@ -37,7 +41,7 @@ impl Win32Window {
         // Enabling HiDPI support
         unsafe { SetProcessDpiAwarenessContext(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2); }
 
-        let class_name = String::from("SDR").into_pcwstr();
+        let class_name = PCWSTR::from_raw(String::from("s").to_utf16().as_mut_ptr() as *mut _ as _);
         let h_instance = unsafe { GetModuleHandleW(None).unwrap() };
 
         let wc = unsafe {
@@ -57,7 +61,7 @@ impl Win32Window {
             CreateWindowExW(
                 WINDOW_EX_STYLE(0),
                 class_name,
-                title.into_pcwstr(),
+                PCWSTR::from_raw(title.to_utf16().as_mut_ptr() as *mut _ as _),
                 WS_OVERLAPPEDWINDOW,
                 pos_x,
                 pos_y,
@@ -142,9 +146,14 @@ impl Window for Win32Window {
     }
 }
 
-impl VulkanSupport for Win32Window {
-    fn get_required_extensions_list(&self) -> Vec<&'static str> {
+impl VulkanWindow for Win32Window {
+    fn get_required_extensions_list(&self) -> &'static [*const c_char] {
         // TODO: Check availability
-        vec!["VK_KHR_surface", "VK_KHR_win32_surface"]
+        const EXTENSIONS: [*const c_char; 2] = [
+            khr::Surface::name().as_ptr(),
+            khr::Win32Surface::name().as_ptr(),
+        ];
+
+        &EXTENSIONS
     }
 }

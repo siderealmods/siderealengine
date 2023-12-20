@@ -1,17 +1,12 @@
-use windows::core::PCWSTR;
-
 /// Convert to PCWSTR from string.
-pub trait IntoPCWSTR {
-    fn into_pcwstr(&self) -> PCWSTR;
+pub trait ToUTF16String {
+    fn to_utf16(&self) -> Vec<u16>;
 }
 
-impl IntoPCWSTR for String {
-    fn into_pcwstr(&self) -> PCWSTR {
-        let mut encoded = self
-            .encode_utf16()
+impl ToUTF16String for String {
+    fn to_utf16(&self) -> Vec<u16> {
+        self.encode_utf16()
             .chain([0u16])
-            .collect::<Vec<u16>>();
-
-        PCWSTR(encoded.as_mut_ptr())
+            .collect::<Vec<u16>>()
     }
 }

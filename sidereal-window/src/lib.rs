@@ -1,5 +1,3 @@
-pub mod vulkan;
-
 #[cfg(target_os = "windows")]
 pub mod win32;
 
