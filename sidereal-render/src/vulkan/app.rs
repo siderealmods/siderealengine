@@ -5,8 +5,9 @@ use ash::{
         ApplicationInfo, StructureType, make_api_version, API_VERSION_1_3,
         InstanceCreateInfo, DebugUtilsMessengerCreateInfoEXT,
         DebugUtilsMessageSeverityFlagsEXT, DebugUtilsMessageTypeFlagsEXT,
-        DebugUtilsMessengerEXT, DebugUtilsMessengerCallbackDataEXT,
-        FALSE, Bool32, InstanceCreateInfoBuilder,
+        DebugUtilsMessengerCallbackDataEXT,
+        DebugUtilsMessengerEXT,
+        FALSE, Bool32,
     },
     extensions::ext::DebugUtils,
     Entry, Instance
@@ -19,7 +20,8 @@ pub struct VulkanApp {
     debug_mode: bool,
     entry: Entry,
     instance: Option<Instance>,
-    debug_messenger: Option<DebugUtilsMessengerEXT>,
+    debug_utils_loader: Option<DebugUtils>,
+    debug_callback: Option<DebugUtilsMessengerEXT>,
 }
 
 /// a callback for vulkan debug messanger
@@ -82,6 +84,37 @@ impl VulkanApp {
         Ok(true)
     }
 
+    fn create_debugutils(&mut self) -> Result<(), VkError> {
+        if let Some(instance) = &self.instance {
+            let mut debug_info = DebugUtilsMessengerCreateInfoEXT::default();
+            Self::populate_debug_info(&mut debug_info);
+
+            let debug_utils_loader = DebugUtils::new(&self.entry, &instance);
+
+            let debug_callback = unsafe { debug_utils_loader.create_debug_utils_messenger(&debug_info, None) }.unwrap();
+
+            self.debug_utils_loader = Some(debug_utils_loader);
+            self.debug_callback = Some(debug_callback);
+
+            Ok(())
+        } else {
+            Err(VkError::InstanceNotInitialized)
+        }
+    }
+
+    fn populate_debug_info(debug_info: &mut DebugUtilsMessengerCreateInfoEXT) {
+        debug_info.s_type = StructureType::DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
+        debug_info.message_severity =
+            DebugUtilsMessageSeverityFlagsEXT::VERBOSE
+            | DebugUtilsMessageSeverityFlagsEXT::WARNING
+            | DebugUtilsMessageSeverityFlagsEXT::ERROR;
+        debug_info.message_type =
+            DebugUtilsMessageTypeFlagsEXT::GENERAL
+            | DebugUtilsMessageTypeFlagsEXT::VALIDATION
+            | DebugUtilsMessageTypeFlagsEXT::PERFORMANCE;
+        debug_info.pfn_user_callback = Some(vulkan_debug_callback);
+    }
+
     fn create_instance(&mut self, extensions: &'static [*const c_char]) -> Result<(), VkError> {
         let layers_cstr = Self::REQUIRED_VALIDATION_LAYERS_DEBUG.iter().map(|layer| {
             CString::new(*layer).expect("validation layer names are nul")
@@ -112,7 +145,9 @@ impl VulkanApp {
             ..Default::default()
         };
 
-        let extensions_vec = extensions.to_vec();
+        let mut extensions_vec = extensions.to_vec();
+        // Add debug utils
+        extensions_vec.push(DebugUtils::name().as_ptr());
 
         let mut instance_info = InstanceCreateInfo {
             s_type: StructureType::INSTANCE_CREATE_INFO,
@@ -131,18 +166,7 @@ impl VulkanApp {
         if self.debug_mode {
             instance_info.enabled_layer_count = layers_cstr.len() as _;
 
-            debug_info.s_type = StructureType::DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
-            debug_info.message_severity =
-                DebugUtilsMessageSeverityFlagsEXT::VERBOSE
-                | DebugUtilsMessageSeverityFlagsEXT::WARNING
-                | DebugUtilsMessageSeverityFlagsEXT::ERROR;
-            debug_info.message_type =
-                DebugUtilsMessageTypeFlagsEXT::GENERAL
-                | DebugUtilsMessageTypeFlagsEXT::VALIDATION
-                | DebugUtilsMessageTypeFlagsEXT::PERFORMANCE;
-
-            debug_info.pfn_user_callback = Some(vulkan_debug_callback);
-            debug_info.p_user_data = null_mut();
+            Self::populate_debug_info(&mut debug_info);
 
             instance_info.enabled_layer_count = layers_cstr.len() as _;
             instance_info.pp_enabled_layer_names = layers_cstr.as_ptr();
@@ -163,10 +187,18 @@ impl VulkanApp {
     pub fn init_with_window<T: VulkanWindow>(&mut self, window: &T) -> Result<(), VkError> {
         self.create_instance(window.get_required_extensions_list())?;
 
+        if self.debug_mode {
+            self.create_debugutils()?;
+        }
+
         Ok(())
     }
 
     pub fn destroy(&mut self) {
+        if self.debug_mode {
+
+        }
+
         if let Some(instance) = &self.instance {
             unsafe { instance.destroy_instance(None); }
         }
@@ -182,7 +214,8 @@ impl VulkanApp {
             debug_mode,
             entry,
             instance: None,
-            debug_messenger: None,
+            debug_utils_loader: None,
+            debug_callback: None,
         })
     }
 }

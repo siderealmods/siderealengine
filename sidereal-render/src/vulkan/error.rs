@@ -4,6 +4,8 @@ pub enum VkError {
     FailedToCreateInstance,
     FailedToCreateKHRSurface,
     FailedToCreateValidationLayer,
+    FailedToCreateDebugUtils,
     FailedToInitVulkan,
+    InstanceNotInitialized,
     ValidationLayersUnavailable,
 }
