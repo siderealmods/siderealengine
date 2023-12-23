@@ -5,6 +5,16 @@ edition = "2021"
 
 [dependencies]
 sidereal-render = { path = "../sidereal-render" }
+
+[target.'cfg(target_family = "wasm")'.dependencies]
+js-sys = "0.3.66"
+wasm-bindgen = "0.2.89"
+
+[target.'cfg(target_family = "wasm")'.dependencies.web-sys]
+version = "0.3.66"
+features = ['Document', 'Element', 'HtmlCanvasElement', 'Window']
+
+[target.'cfg(target_os = "windows")'.dependencies]
 ash = "0.37.3+1.3.251"
 
 [target.'cfg(target_os = "windows")'.dependencies.windows]
