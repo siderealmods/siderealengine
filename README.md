@@ -6,13 +6,15 @@
 
 # SiderealEngine
 
-A 2D / 3D graphics engine for games, arts and applications. Flexibly embeddable to your project.
+A 2D / 3D graphics engine for games, arts and applications.
 
 ## Features
 
 ### Embeddable
 
 TODO
+
+### Native experience
 
 ### Multiple Frameworks
 
@@ -22,7 +24,7 @@ Sidereal includes 2 options. These frameworks are useful to develop games and ap
 
    Designed for gamedev.
 
-2. AdaptiveFramework ([`sidereal-adaptive`](https://github.com/siderealmods/adaptive) crate)
+2. Adaptable ([`sidereal-adaptable`](https://github.com/siderealmods/adaptable) crate)
 
    Designed for application. Supports retained mode rendering.
 
